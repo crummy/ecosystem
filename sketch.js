@@ -2,9 +2,10 @@ let hunters =[]
 let food = []
 const initNum = 3
 const numFood = 12 
-const startsize = 30
+const startsize = 10
 
 function setup() {
+    colorMode(RGB)
     createCanvas(windowWidth, windowHeight)
     background(0)
 
@@ -24,10 +25,10 @@ function draw () {
         hunter.update()
         hunter.starve()
         if (hunter.isHungry()) {
-            hunter.c = color(255, 50, 200)
+            hunter.tail.setColor(color('red'))
             hunter.hunt(food)
         } else {
-            hunter.c = color(100,24,45)
+            hunter.tail.setColor(color('blue'))
             const mateableOthers = hunters.filter(other => other.wantsToMate()).filter(other => other !== hunter)
             const matedOther = hunter.mate(mateableOthers)
             if (matedOther !== undefined) {
@@ -37,7 +38,7 @@ function draw () {
         hunter.display()
     });
     hunters = hunters.filter(hunter => hunter.isAlive())
-    food = food.filter(f => f.isAlive())    
+    food = food.filter(f => f.isAlive())
     food.forEach(f => {
         f.update()
         if (f.wantsToReproduce()) {
@@ -49,8 +50,11 @@ function draw () {
 }
 
 function reproduce(parentA, parentB) {
-    parentA.r *= 0.25
-    parentB.r *= 0.25
+    parentA.mated()
+    parentA.tail.setColor(color('blue'))
+    parentB.mated()
+    parentB.tail.setColor(color('blue'))
+
     let loc = p5.Vector.lerp(parentA.loc, parentB.loc, 0.5)
     hunters.push(new Hunter(loc.x, loc.y, startsize))
 }

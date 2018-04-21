@@ -3,7 +3,6 @@ function Boid(x, y, rad) {
     this.acc = new p5.Vector(0, 0);
     this.vel = new p5.Vector(random(-1, 1), random(-1, 1));
     this.r = rad;
-    this.displayR = rad;
     this.c = (255, 50, 200);
     this.maxspeed = 3;
     this.maxforce = 0.05;
@@ -39,7 +38,6 @@ function Boid(x, y, rad) {
   };
   
   Boid.prototype.update = function() {
-    this.displayR = lerp(this.displayR, this.r, 0.01)
     this.vel.add(this.acc);
     this.loc.add(this.vel);
     this.checkEdges()
@@ -54,9 +52,9 @@ function Boid(x, y, rad) {
     translate(this.loc.x, this.loc.y);
     rotate(this.vel.heading() + radians(90));
     beginShape();
-    vertex(this.displayR / 2, 0);
-    vertex(this.displayR, this.displayR);
-    vertex(0, this.displayR);
+    vertex(this.r / 2, 0);
+    vertex(this.r, this.r);
+    vertex(0, this.r);
     endShape(CLOSE);
     pop();
   };
@@ -81,13 +79,14 @@ function Boid(x, y, rad) {
     this.c = color(226, 43, 43);
     this.maxspeed = 4
     this.maxforce = 0.5
+    this.tail = new Tail(x, y)
   }
 
   Hunter.prototype = Object.create(Boid.prototype);
   Hunter.prototype.constructor = Hunter;
 
   Hunter.prototype.isAlive =function() {
-      if (this.r > 0) {
+      if (this.tail.maxLength > 0) {
           return true
       } else {
           return false
@@ -95,11 +94,11 @@ function Boid(x, y, rad) {
   }
 
   Hunter.prototype.starve = function() {
-      this.r -= 0.05
+      this.tail.shrink()
   }
 
   Hunter.prototype.isHungry = function() {
-    return this.r < 50
+    return this.tail.isHungry()
 }
 
   Hunter.prototype.hunt = function(food) {
@@ -115,7 +114,8 @@ function Boid(x, y, rad) {
     }
     if (closestDistance < 4 || closestDistance < this.r) {
         closestFood.eat()
-        this.r += log(this.r+2)*10 
+        console.log("Eating food")
+        this.tail.grow()
     }
     if (closestFood !== undefined) {
         let desired = new p5.Vector.sub(closestFood.loc, this.loc);
@@ -132,7 +132,7 @@ function Boid(x, y, rad) {
   }
 
   Hunter.prototype.mate = function(mateableOthers) {
-    const perceptionRadius = 3*this.r
+    const perceptionRadius = 50
     let closestDistance = 9999999;
     let closestMate = undefined;
     for (o of mateableOthers) {
@@ -142,7 +142,7 @@ function Boid(x, y, rad) {
             closestMate = o;
         }
     }
-    if (closestDistance < 4 || closestDistance < this.r) {
+    if (closestDistance < 16) {
         return closestMate;
     }
     if (closestMate !== undefined) {
@@ -155,6 +155,23 @@ function Boid(x, y, rad) {
     }
     return undefined;
   }
+
+  Hunter.prototype.display = function() {
+        this.tail.display(this.loc.x, this.loc.y)
+  }
+
+  Hunter.prototype.mated = function() {
+    this.tail.maxLength *= 0.25;
+}
+
+  Hunter.prototype.update = function() {
+    this.vel.add(this.acc);
+    this.loc.add(this.vel);
+    this.checkEdges()
+    this.vel.limit(this.maxspeed);
+    this.acc.mult(0);
+    this.tail.update(this.loc.x, this.loc.y)
+}
 
 
 
